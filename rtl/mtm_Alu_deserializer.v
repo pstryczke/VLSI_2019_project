@@ -32,6 +32,7 @@
 	input  wire rst,
 	input  wire sin,
 	
+	output reg	rdy_to_send,
 	output reg  [31:0] B_out,
 	output reg  [31:0] A_out,
 	output reg  [2:0]  oprnt_out,
@@ -50,26 +51,30 @@
 	reg [3:0] frame_cnt_nxt;
 	reg [3:0] crc_check;
 	reg [3:0] crc_check_nxt;
+	reg [3:0] crc_4;
+	reg rdy_to_send_nxt;
 	
 	
 	
 
 	always @ (posedge clk or posedge rst) begin
 		if(rst) begin
+			state			<= 'IDLE;
+			state_nxt		<= 'IDLE;
 			B_out 	 		<= 0;
 			B_out_nxt		<= 0;
 			A_out			<= 0;
 			A_out_nxt		<= 0;
 			oprnt_out 		<= 0;
 			err_flg_out 	<= 0;
-			state			<= 'IDLE;
-			state_nxt		<= 'IDLE;
 			bit_cnt			<= 0;
 			bit_cnt_nxt		<= 0;
 			frame_cnt		<= 0;
 			frame_cnt_nxt	<= 0;
 			crc_check		<= 0;
 			crc_check_nxt	<= 0;
+			rdy_to_send		<= 0;
+			rdy_to_send_nxt	<= 0;
 			
 		end
 		else begin
@@ -81,6 +86,7 @@
 			bit_cnt		<= bit_cnt_nxt;
 			frame_cnt	<= frame_cnt_nxt;
 			crc_check	<= crc_check_nxt;
+			rdy_to_send	<= rdy_to_send_nxt;
 			
 		end
 	end
@@ -144,55 +150,106 @@
 			'IDLE: begin
 				bit_cnt_nxt = 0;
 				frame_cnt_nxt = frame_cnt;
-
+				B_out_nxt = B_out;
+				A_out_nxt = A_out;
+				oprnt_out_nxt = oprnt_out;
+				crc_check_nxt = crc_check;
+				err_flg_out_nxt = err_flg_out;
+				rdy_to_send_nxt = 0;
 			end
 			
 			'TYPE: begin
 				bit_cnt_nxt = 0;
 				frame_cnt_nxt = frame_cnt;
-				
+				B_out_nxt = B_out;
+				A_out_nxt = A_out;
+				oprnt_out_nxt = oprnt_out;
+				crc_check_nxt = crc_check;
+				err_flg_out_nxt = err_flg_out;
+				rdy_to_send_nxt = 0;
 			end
 			
 			'DATA: begin
+				oprnt_out_nxt = oprnt_out;
+				crc_check_nxt = crc_check;
+				err_flg_out_nxt = err_flg_out;
+				rdy_to_send_nxt = 0;
+				
 				bit_cnt_nxt = bit_cnt + 1;
 				
 				if (frame_cnt < 4) begin
 					B_out_nxt = {B_out[30:0], sin};
+					A_out_nxt = A_out;
 				end
 				else if (frame_cnt < 8) begin
 					A_out_nxt = {A_out[30:0], sin};
+					B_out_nxt = B_out;
 				end
 				
 				if (bit_cnt == 7) begin
 					frame_cnt_nxt = frame_cnt + 1;
 				end
+				else begin
+					frame_cnt_nxt = frame_cnt;
+				end
 			end
 			
 			'CMD: begin
+				frame_cnt_nxt = frame_cnt;
+				B_out_nxt = B_out;
+				A_out_nxt = A_out;
+				rdy_to_send_nxt = 0;
+				
 				bit_cnt_nxt = bit_cnt + 1;
 				
 				if (bit_cnt > 0 && bit_cnt < 4) begin
 					oprnt_out_nxt = {oprnt_out[1:0], sin};
+					crc_check_nxt = crc_check;
 				end
 				else if (bit_cnt <= 7) begin
 					crc_check_nxt = {crc_check[2:0], sin};
+					oprnt_out_nxt = oprnt_out;
 				end
 				
 				if (frame_cnt != 8) begin
 					err_flg_out_nxt = err_flg_out | ERR_DATA;
 				end
+				else begin
+					err_flg_out_nxt = err_flg_out;
+				end
 			end
 			
 			'CHECK_DATA: begin
+				bit_cnt_nxt = 0;
+				frame_cnt_nxt = 0;
+				B_out_nxt = B_out;
+				A_out_nxt = A_out;
+				oprnt_out_nxt = oprnt_out;
+				crc_check_nxt = crc_check;
+				rdy_to_send_nxt = 0;
 				
-			
+				CRC4_68({B_out, A_out, 1'b1, oprnt_out}, crc_4)
+				
+				if(crc_4 != crc_check) begin
+					err_flg_out_nxt = err_flg_out | ERR_CRC;
+				end
+				else begin
+					err_flg_out_nxt = err_flg_out;
+				end
 			end
 			
 			'SEND_DATA: begin
-
-			
+				rdy_to_send_nxt = 1;
+				bit_cnt_nxt = 0;
+				frame_cnt_nxt = frame_cnt;
+				B_out_nxt = B_out;
+				A_out_nxt = A_out;
+				oprnt_out_nxt = oprnt_out;
+				crc_check_nxt = crc_check;
+				err_flg_out_nxt = err_flg_out;
 			end
-			
+			default:
+			end
 		endcase	
 	end
 	
