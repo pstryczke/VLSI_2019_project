@@ -3,8 +3,8 @@
  *
  * MODULE:    mtm_Alu
  * PROJECT:   PPCU_VLSI
- * AUTHORS:	  Patryk Tokarczyk, Sebastian Sztuk
- * DATE:	  02.09.2019
+ * AUTHORS:	  Patryk Tokarczyk
+ * DATE:	  12.09.2019
  * ------------------------------------------------------------------------------
  * The ALU should operate as described in the mtmAlu_test_top module.
  * It should consist of three modules connected together:
@@ -15,24 +15,32 @@
  *
  *******************************************************************************/
  
- `define IDLE		3b'000
- `define TYPE		3b'001
- `define DATA		3b'010
- `define CMD		3b'011
- `define CHECK_DATA	3b'100
- `define SEND_DATA	3b'101
+ `define IDLE		3'b000
+ `define TYPE		3'b001
+ `define DATA		3'b010
+ `define CMD		3'b011
+ `define CHECK_DATA	3'b100
+ `define SEND_DATA	3'b101
+ `define WAIT		3'b110
+ `define SEND_ERR	3'b111
  
- `define ERR_DATA	6b'100100
- `define ERR_CRC	6b'010010
- `define ERR_OP		6b'001001
+ `define ERR_DATA	6'b100100
+ `define ERR_CRC	6'b010010
+ `define ERR_OP		6'b001001
+ 
+ `define AND		3'b000
+ `define OR			3'b001
+ `define ADD		3'b100
+ `define SUB		3'b101
  
  
  module mtm_Alu_deserializer (
 	input  wire clk,
-	input  wire rst,
+	input  wire rst_n,
 	input  wire sin,
 	
 	output reg	rdy_to_send,
+	output reg	rdy_to_send_err,
 	output reg  [31:0] B_out,
 	output reg  [31:0] A_out,
 	output reg  [2:0]  oprnt_out,
@@ -53,40 +61,42 @@
 	reg [3:0] crc_check_nxt;
 	reg [3:0] crc_4;
 	reg rdy_to_send_nxt;
-	
-	
+	reg rdy_to_send_err_nxt;
+	reg is_data;
+	reg is_data_nxt;
+	reg error;
+	reg error_nxt;
 	
 
-	always @ (posedge clk or posedge rst) begin
-		if(rst) begin
-			state			<= 'IDLE;
-			state_nxt		<= 'IDLE;
+	always @ (posedge clk) begin
+		if(!rst_n) begin
+			state			<= `IDLE;
 			B_out 	 		<= 0;
-			B_out_nxt		<= 0;
 			A_out			<= 0;
-			A_out_nxt		<= 0;
 			oprnt_out 		<= 0;
 			err_flg_out 	<= 0;
 			bit_cnt			<= 0;
-			bit_cnt_nxt		<= 0;
 			frame_cnt		<= 0;
-			frame_cnt_nxt	<= 0;
 			crc_check		<= 0;
-			crc_check_nxt	<= 0;
 			rdy_to_send		<= 0;
-			rdy_to_send_nxt	<= 0;
+			rdy_to_send_err <= 0;
+			is_data			<= 0;
+			error			<= 0;
 			
 		end
 		else begin
-			B_out 	 	<= B_out_nxt;
-			A_out		<= A_out_nxt;
-			oprnt_out 	<= oprnt_out_nxt;
-			err_flg_out <= err_flg_out_nxt;	
-			state		<= state_nxt;
-			bit_cnt		<= bit_cnt_nxt;
-			frame_cnt	<= frame_cnt_nxt;
-			crc_check	<= crc_check_nxt;
-			rdy_to_send	<= rdy_to_send_nxt;
+			B_out 	 		<= B_out_nxt;
+			A_out			<= A_out_nxt;
+			oprnt_out 		<= oprnt_out_nxt;
+			err_flg_out 	<= err_flg_out_nxt;	
+			state			<= state_nxt;
+			bit_cnt			<= bit_cnt_nxt;
+			frame_cnt		<= frame_cnt_nxt;
+			crc_check		<= crc_check_nxt;
+			rdy_to_send		<= rdy_to_send_nxt;
+			is_data			<= is_data_nxt;
+			error			<= error_nxt;
+			rdy_to_send_err <= rdy_to_send_err_nxt;
 			
 		end
 	end
@@ -94,161 +104,186 @@
 	always @* begin
 		case(state)
 		
-			'IDLE: begin
+			`IDLE: begin
 				if (sin == 0) begin
-					state_nxt = 'TYPE;
+					state_nxt = `WAIT;
 				end
 				else begin
-					state_nxt = 'IDLE;
+					state_nxt = `IDLE;
 				end
 			end
 			
-			'TYPE: begin
-				if (sin == 0) begin
-					state_nxt = 'DATA;
+			`WAIT: begin
+				state_nxt = `TYPE;
+			end
+			
+			`TYPE: begin
+				if (is_data == 1) begin
+					state_nxt = `DATA;
 				end
 				else begin
-					if 
-					state_nxt = 'CMD;
+					state_nxt = `CMD;
 				end
 			end
 			
-			'DATA: begin
+			`DATA: begin
+				
 				if (bit_cnt == 8) begin
-					state_nxt = 'IDLE;
+					if (error == 1) begin
+						state_nxt = `CHECK_DATA;
+					end
+					else begin
+						state_nxt = `IDLE;
+					end
 				end
 				else begin
-					state_nxt = 'DATA;
+					state_nxt = `DATA;
 				end
 			end
 			
-			'CMD: begin
+			`CMD: begin
 				if (bit_cnt == 8) begin
-					state_nxt = 'CHECK_DATA;
+					state_nxt = `CHECK_DATA;
 				end
 				else begin
-					state_nxt = 'CMD;
+					state_nxt = `CMD;
 				end
 			end
 			
-			'CHECK_DATA: begin
-				state_nxt = 'SEND_DATA;
+			`CHECK_DATA: begin
+				if (error == 0) begin
+					state_nxt = `SEND_DATA;
+				end
+				else begin
+					state_nxt = `SEND_ERR;
+				end
 			end
 			
-			'SEND_DATA: begin
-				state_nxt - 'IDLE;
+			`SEND_DATA: begin
+				state_nxt = `IDLE;
 			end
 			
-			default:
+			`SEND_ERR: begin
+				state_nxt = `IDLE;
+			end
+			
+			default: begin
 			end
 		endcase	
 	end
 	
 	always @* begin
+		bit_cnt_nxt = bit_cnt;
+		frame_cnt_nxt = frame_cnt;
+		B_out_nxt = B_out;
+		A_out_nxt = A_out;
+		oprnt_out_nxt = oprnt_out;
+		crc_check_nxt = crc_check;
+		err_flg_out_nxt = err_flg_out;
+		rdy_to_send_nxt = rdy_to_send;
+		rdy_to_send_err_nxt = rdy_to_send_err;
+		is_data_nxt = is_data;
+		error_nxt = error;
+		
 		case(state_nxt)
 		
-			'IDLE: begin
+			`IDLE: begin
 				bit_cnt_nxt = 0;
-				frame_cnt_nxt = frame_cnt;
-				B_out_nxt = B_out;
-				A_out_nxt = A_out;
-				oprnt_out_nxt = oprnt_out;
-				crc_check_nxt = crc_check;
-				err_flg_out_nxt = err_flg_out;
 				rdy_to_send_nxt = 0;
+				rdy_to_send_err_nxt = 0;
+				error_nxt = 0;
+				err_flg_out_nxt = 6'b000000;
 			end
 			
-			'TYPE: begin
-				bit_cnt_nxt = 0;
-				frame_cnt_nxt = frame_cnt;
-				B_out_nxt = B_out;
-				A_out_nxt = A_out;
-				oprnt_out_nxt = oprnt_out;
-				crc_check_nxt = crc_check;
-				err_flg_out_nxt = err_flg_out;
-				rdy_to_send_nxt = 0;
+			`WAIT: begin
 			end
 			
-			'DATA: begin
-				oprnt_out_nxt = oprnt_out;
-				crc_check_nxt = crc_check;
-				err_flg_out_nxt = err_flg_out;
-				rdy_to_send_nxt = 0;
+			`TYPE: begin
+				//bit_cnt_nxt = 0;
+				//rdy_to_send_nxt = 0;
+				//rdy_to_send_err_nxt = 0;
+				//error_nxt = 0;
+				if (sin == 0) begin
+					is_data_nxt = 1;
+				end
+				else begin
+					is_data_nxt = 0;
+				end
+			end
+			
+			`DATA: begin
+				//rdy_to_send_nxt = 0;
 				
 				bit_cnt_nxt = bit_cnt + 1;
 				
 				if (frame_cnt < 4) begin
 					B_out_nxt = {B_out[30:0], sin};
-					A_out_nxt = A_out;
 				end
 				else if (frame_cnt < 8) begin
 					A_out_nxt = {A_out[30:0], sin};
-					B_out_nxt = B_out;
 				end
 				
 				if (bit_cnt == 7) begin
 					frame_cnt_nxt = frame_cnt + 1;
 				end
-				else begin
-					frame_cnt_nxt = frame_cnt;
+				
+				if (frame_cnt_nxt > 8) begin
+					error_nxt = 1;
+					err_flg_out_nxt = `ERR_DATA;
 				end
 			end
 			
-			'CMD: begin
-				frame_cnt_nxt = frame_cnt;
-				B_out_nxt = B_out;
-				A_out_nxt = A_out;
+			`CMD: begin
 				rdy_to_send_nxt = 0;
 				
 				bit_cnt_nxt = bit_cnt + 1;
 				
 				if (bit_cnt > 0 && bit_cnt < 4) begin
 					oprnt_out_nxt = {oprnt_out[1:0], sin};
-					crc_check_nxt = crc_check;
 				end
 				else if (bit_cnt <= 7) begin
 					crc_check_nxt = {crc_check[2:0], sin};
-					oprnt_out_nxt = oprnt_out;
 				end
 				
-				if (frame_cnt != 8) begin
-					err_flg_out_nxt = err_flg_out | ERR_DATA;
+				if (frame_cnt < 8) begin
+					error_nxt = 1;
+					err_flg_out_nxt = `ERR_DATA;
 				end
-				else begin
-					err_flg_out_nxt = err_flg_out;
-				end
+
 			end
 			
-			'CHECK_DATA: begin
+			`CHECK_DATA: begin
 				bit_cnt_nxt = 0;
 				frame_cnt_nxt = 0;
-				B_out_nxt = B_out;
-				A_out_nxt = A_out;
-				oprnt_out_nxt = oprnt_out;
-				crc_check_nxt = crc_check;
 				rdy_to_send_nxt = 0;
 				
-				CRC4_68({B_out, A_out, 1'b1, oprnt_out}, crc_4)
-				
-				if(crc_4 != crc_check) begin
-					err_flg_out_nxt = err_flg_out | ERR_CRC;
+				if (error == 0) begin
+					if ((oprnt_out != `AND) && (oprnt_out != `OR) && (oprnt_out != `ADD) && (oprnt_out != `SUB)) begin
+						error_nxt = 1;
+						err_flg_out_nxt = `ERR_OP;
+					end
 				end
-				else begin
-					err_flg_out_nxt = err_flg_out;
+				
+				CRC4_68({B_out, A_out, 1'b1, oprnt_out}, crc_4);
+				
+				if (error == 0) begin
+					if (crc_4 != crc_check) begin
+						error_nxt = 1;
+						err_flg_out_nxt = `ERR_CRC;
+					end
 				end
 			end
 			
-			'SEND_DATA: begin
+			`SEND_DATA: begin
 				rdy_to_send_nxt = 1;
-				bit_cnt_nxt = 0;
-				frame_cnt_nxt = frame_cnt;
-				B_out_nxt = B_out;
-				A_out_nxt = A_out;
-				oprnt_out_nxt = oprnt_out;
-				crc_check_nxt = crc_check;
-				err_flg_out_nxt = err_flg_out;
 			end
-			default:
+			
+			`SEND_ERR: begin
+				rdy_to_send_err_nxt = 1;
+				//err_flg_out_nxt = 6'b000000;
+			end
+			
+			default: begin
 			end
 		endcase	
 	end
