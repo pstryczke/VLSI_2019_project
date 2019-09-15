@@ -56,7 +56,7 @@ module mtm_Alu_tb (
 		clock = 0;
 		#18;
 		while (!finish_simulation)
-		#100 clock <= ~clock;
+		#10 clock <= ~clock;
 	end
 	
 	assign clk = clock;
@@ -198,7 +198,7 @@ module mtm_Alu_tb (
 				B = $random;
 				C = calculate(A, B, OP);
 				CRC4_68({B, A, 1'b1, OP}, CRC);
-				
+				#101;
 				send_calculation_data(A, B, OP, CRC);
 				compare(C);
 			end

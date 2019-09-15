@@ -73,15 +73,15 @@
 			state			<= `IDLE;
 			B_out 	 		<= 0;
 			A_out			<= 0;
-			oprnt_out 		<= 0;
-			err_flg_out 	<= 0;
-			bit_cnt			<= 0;
-			frame_cnt		<= 0;
-			crc_check		<= 0;
-			rdy_to_send		<= 0;
-			rdy_to_send_err <= 0;
-			is_data			<= 0;
-			error			<= 0;
+			oprnt_out 		<= 3'b000;
+			err_flg_out 	<= 6'b000000;
+			bit_cnt			<= 4'b0000;
+			frame_cnt		<= 4'b0000;
+			crc_check		<= 4'b0000;
+			rdy_to_send		<= 1'b0;
+			rdy_to_send_err <= 1'b0;
+			is_data			<= 1'b0;
+			error			<= 1'b0;
 			
 		end
 		else begin
@@ -188,10 +188,10 @@
 		case(state_nxt)
 		
 			`IDLE: begin
-				bit_cnt_nxt = 0;
-				rdy_to_send_nxt = 0;
-				rdy_to_send_err_nxt = 0;
-				error_nxt = 0;
+				bit_cnt_nxt = 4'b0000;
+				rdy_to_send_nxt = 1'b0;
+				rdy_to_send_err_nxt = 1'b0;
+				error_nxt = 1'b0;
 				err_flg_out_nxt = 6'b000000;
 			end
 			
@@ -199,22 +199,16 @@
 			end
 			
 			`TYPE: begin
-				//bit_cnt_nxt = 0;
-				//rdy_to_send_nxt = 0;
-				//rdy_to_send_err_nxt = 0;
-				//error_nxt = 0;
 				if (sin == 0) begin
-					is_data_nxt = 1;
+					is_data_nxt = 1'b1;
 				end
 				else begin
-					is_data_nxt = 0;
+					is_data_nxt = 1'b0;
 				end
 			end
 			
 			`DATA: begin
-				//rdy_to_send_nxt = 0;
-				
-				bit_cnt_nxt = bit_cnt + 1;
+				bit_cnt_nxt = bit_cnt + 4'b0001;
 				
 				if (frame_cnt < 4) begin
 					B_out_nxt = {B_out[30:0], sin};
@@ -224,19 +218,19 @@
 				end
 				
 				if (bit_cnt == 7) begin
-					frame_cnt_nxt = frame_cnt + 1;
+					frame_cnt_nxt = frame_cnt + 4'b0001;
 				end
 				
 				if (frame_cnt_nxt > 8) begin
-					error_nxt = 1;
+					error_nxt = 1'b1;
 					err_flg_out_nxt = `ERR_DATA;
 				end
 			end
 			
 			`CMD: begin
-				rdy_to_send_nxt = 0;
+				rdy_to_send_nxt = 1'b0;
 				
-				bit_cnt_nxt = bit_cnt + 1;
+				bit_cnt_nxt = bit_cnt + 4'b0001;
 				
 				if (bit_cnt > 0 && bit_cnt < 4) begin
 					oprnt_out_nxt = {oprnt_out[1:0], sin};
@@ -246,20 +240,20 @@
 				end
 				
 				if (frame_cnt < 8) begin
-					error_nxt = 1;
+					error_nxt = 1'b1;
 					err_flg_out_nxt = `ERR_DATA;
 				end
 
 			end
 			
 			`CHECK_DATA: begin
-				bit_cnt_nxt = 0;
-				frame_cnt_nxt = 0;
-				rdy_to_send_nxt = 0;
+				bit_cnt_nxt = 4'b0000;
+				frame_cnt_nxt = 4'b0000;
+				rdy_to_send_nxt = 1'b0;
 				
 				if (error == 0) begin
 					if ((oprnt_out != `AND) && (oprnt_out != `OR) && (oprnt_out != `ADD) && (oprnt_out != `SUB)) begin
-						error_nxt = 1;
+						error_nxt = 1'b1;
 						err_flg_out_nxt = `ERR_OP;
 					end
 				end
@@ -268,19 +262,18 @@
 				
 				if (error == 0) begin
 					if (crc_4 != crc_check) begin
-						error_nxt = 1;
+						error_nxt = 1'b1;
 						err_flg_out_nxt = `ERR_CRC;
 					end
 				end
 			end
 			
 			`SEND_DATA: begin
-				rdy_to_send_nxt = 1;
+				rdy_to_send_nxt = 1'b1;
 			end
 			
 			`SEND_ERR: begin
-				rdy_to_send_err_nxt = 1;
-				//err_flg_out_nxt = 6'b000000;
+				rdy_to_send_err_nxt = 1'b1;
 			end
 			
 			default: begin

@@ -1,0 +1,110 @@
+# PPCMD 1 
+# sroute -connect corePin -layerChangeRange { ME1(1) ME6(6) } -blockPinTarget nearestTarget -corePinTarget firstAfterRowEnd -allowJogging 0 -crossoverViaLayerRange { ME1(1) ME6(6) } -nets { vddd gndd vddb gndb } -allowLayerChange 1 -targetViaLayerRange { ME1(1) ME6(6) }
+# 5 
+# 16 
+# 0 
+# 0 
+# 0 
+# 0 
+# BOX_LIST 
+# END_BOX_LIST 
+# NET_INFO_LIST 
+# END_NET_INFO_LIST 
+# END_PPCMD 1 
+
+# PPCMD 2 
+# addStripe -nets {vddd gndd} -layer ME4 -direction horizontal -width 5 -spacing 1.8 -set_to_set_distance 100 -start_from bottom -start_offset 137 -stop_offset 120 -switch_layer_over_obs false -max_same_layer_jog_length 2 -padcore_ring_top_layer_limit ME6 -padcore_ring_bottom_layer_limit ME1 -block_ring_top_layer_limit ME6 -block_ring_bottom_layer_limit ME1 -use_wire_group 0 -snap_wire_center_to_grid None -skip_via_on_pin {  standardcell } -skip_via_on_wire_shape {  noshape 
+# 4 
+# 2 
+# 1 
+# 0 
+# 0 
+# 2 
+# BOX_LIST 
+# 8400 13400 308360 303280 0 
+# 13680 18680 303080 298000 0 
+# END_BOX_LIST 
+# NET_INFO_LIST 
+# gndd 5000 4 0 164280 171200 100000 0 0 
+# vddd 5000 4 0 157480 171200 100000 0 0 
+# END_NET_INFO_LIST 
+# END_PPCMD 2 
+
+# PPCMD 3 
+# addStripe -nets {vddd gndd} -layer ME5 -direction vertical -width 5 -spacing 1.8 -set_to_set_distance 100 -start_from left -start_offset 131 -stop_offset 123 -switch_layer_over_obs false -max_same_layer_jog_length 2 -padcore_ring_top_layer_limit ME6 -padcore_ring_bottom_layer_limit ME1 -block_ring_top_layer_limit ME6 -block_ring_bottom_layer_limit ME1 -use_wire_group 0 -snap_wire_center_to_grid None -skip_via_on_pin {  standardcell } -skip_via_on_wire_shape {  noshape 
+# 3 
+# 2 
+# 1 
+# 0 
+# 0 
+# 2 
+# BOX_LIST 
+# 8400 8400 308360 298280 0 
+# 13680 13680 303080 293000 0 
+# END_BOX_LIST 
+# NET_INFO_LIST 
+# gndd 5000 5 0 158280 178440 100000 0 0 
+# vddd 5000 5 0 151480 178440 100000 0 0 
+# END_NET_INFO_LIST 
+# END_PPCMD 3 
+
+# PPCMD 4 
+# addRing -nets {vddb gndb} -type core_rings -follow core -layer {top ME3 bottom ME3 left ME4 right ME4} -width {top 2 bottom 2 left 2 right 2} -spacing {top 0.28 bottom 0.28 left 0.28 right 0.28} -offset {top 14 bottom 14 left 14 right 14} -center 0 -extend_corner {lt rt lb rb } -threshold 0 -jog_distance 0 -snap_wire_center_to_grid None
+# 2 
+# 32 
+# 1 
+# 0 
+# 0 
+# 0 
+# BOX_LIST 
+# END_BOX_LIST 
+# NET_INFO_LIST 
+# gndb 2000 3 1 0 0 0 0 0 
+# RING_PT_INFO_LIST 
+# 160880 3200 160880 308480 
+# END_RING_PT_INFO_LIST 
+# gndb 2000 4 1 0 0 0 0 0 
+# RING_PT_INFO_LIST 
+# 3200 155840 318560 155840 
+# END_RING_PT_INFO_LIST 
+# vddb 2000 3 1 0 0 0 0 0 
+# RING_PT_INFO_LIST 
+# 160880 5480 160880 306200 
+# END_RING_PT_INFO_LIST 
+# vddb 2000 4 1 0 0 0 0 0 
+# RING_PT_INFO_LIST 
+# 5480 155840 316280 155840 
+# END_RING_PT_INFO_LIST 
+# END_NET_INFO_LIST 
+# END_PPCMD 4 
+
+# PPCMD 5 
+# addRing -nets {vddd gndd} -type core_rings -follow core -layer {top ME3 bottom ME3 left ME4 right ME4} -width {top 5 bottom 5 left 5 right 5} -spacing {top 0.28 bottom 0.28 left 0.28 right 0.28} -offset {top 1.8 bottom 1.8 left 1.8 right 1.8} -center 0 -extend_corner {lt rt lb rb } -threshold 0 -jog_distance 0 -snap_wire_center_to_grid None
+# 1 
+# 32 
+# 1 
+# 0 
+# 0 
+# 0 
+# BOX_LIST 
+# END_BOX_LIST 
+# NET_INFO_LIST 
+# gndd 5000 3 1 0 0 0 0 0 
+# RING_PT_INFO_LIST 
+# 160880 10900 160880 300780 
+# END_RING_PT_INFO_LIST 
+# gndd 5000 4 1 0 0 0 0 0 
+# RING_PT_INFO_LIST 
+# 10900 155840 310860 155840 
+# END_RING_PT_INFO_LIST 
+# vddd 5000 3 1 0 0 0 0 0 
+# RING_PT_INFO_LIST 
+# 160880 16180 160880 295500 
+# END_RING_PT_INFO_LIST 
+# vddd 5000 4 1 0 0 0 0 0 
+# RING_PT_INFO_LIST 
+# 16180 155840 305580 155840 
+# END_RING_PT_INFO_LIST 
+# END_NET_INFO_LIST 
+# END_PPCMD 5 
+

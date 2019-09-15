@@ -1,0 +1,10 @@
+
+in2reg       Pinsname: u_mtm_Alu_serializer/sout_reg/D, Slack value :9.977, fromClk:      clk1, toClk:      clk1
+
+reg2reg       Pinsname: u_mtm_Alu_serializer/\err_out_reg[4] /D, Slack value :0.205, fromClk:      clk1, toClk:      clk1
+
+reg2out       Pinsname:                 sout, Slack value :10.574, fromClk:      clk1, toClk:      clk1
+
+==========================
+
+GroupType: Standard, View:BC_av, Hold

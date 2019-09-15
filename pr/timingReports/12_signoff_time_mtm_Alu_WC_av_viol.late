@@ -1,0 +1,10 @@
+
+in2reg       Pinsname: u_mtm_Alu_deserializer/\B_out_reg[1] /D, Slack value :6.191, fromClk:      clk1, toClk:      clk1
+
+reg2reg       Pinsname: u_mtm_Alu_core/\crc_out_reg[1] /D, Slack value :3.593, fromClk:      clk1, toClk:      clk1
+
+reg2out       Pinsname:                 sout, Slack value :8.863, fromClk:      clk1, toClk:      clk1
+
+==========================
+
+GroupType: Standard, View:WC_av, Setup

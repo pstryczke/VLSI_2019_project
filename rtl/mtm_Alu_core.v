@@ -18,6 +18,7 @@
  `define IDLE		2'b00
  `define COMPUTE	2'b01
  `define SEND_DATA	2'b10
+ `define DEFAULT	2'b11
  
  `define AND		3'b000
  `define OR			3'b001
@@ -98,6 +99,10 @@
 			`SEND_DATA: begin
 				state_nxt = `IDLE;
 			end
+
+			`DEFAULT: begin
+				state_nxt = `IDLE;
+			end
 			
 		endcase
 	end
@@ -155,6 +160,9 @@
 			
 			`SEND_DATA: begin
 				send_data_nxt = 1;
+			end
+			
+			`DEFAULT: begin
 			end
 			
 		endcase
